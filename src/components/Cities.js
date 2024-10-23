@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Cities.css'; // Asegúrate de crear este archivo CSS para los estilos
+import '../styles/Cities.css'; 
 
 function Cities() {
   const [city, setCity] = useState('');

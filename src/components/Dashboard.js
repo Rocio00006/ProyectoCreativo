@@ -4,16 +4,53 @@ import { useState } from 'react';
 import '../styles/Dashboard.css'
 //import MapComponent from './MapComponent';
 import MapView from './MapView';
-
-
+import CryptoJS from 'crypto-js';
+import rsa from 'js-crypto-rsa';
 
 function Dashboard({ destination }) {
   const [locationName, setLocationName] = useState('Arequipa');
-
-  // Obtenemos el nombre de la ubicación en tiempo real desde el MapView y actualizamos el menú lateral
-  const handleLocationUpdate = (newLocationName) => {
-    setLocationName(newLocationName);
+  const [publicKey, setPublicKey] = useState(null);
+    
+  // Generar un par de claves RSA
+  const generateKeys = async () => {
+      const key = await rsa.generateKey(2048);
+      setPublicKey(key.publicKey); // Almacena solo la clave pública
   };
+
+  // Función para cifrar la ubicación
+  const encryptLocation = async (location) => {
+    if (!publicKey) {
+        throw new Error('La clave pública no está disponible');
+    }
+    const encryptedLocation = await rsa.encrypt(
+        new TextEncoder().encode(location), // Convierte la ubicación a Uint8Array
+        publicKey,
+        { name: "RSA-OAEP", hash: "SHA-256" }
+    );
+    return Buffer.from(encryptedLocation).toString('base64'); // Convierte a base64 para facilitar el envío
+  };
+
+   // Función para manejar la actualización de la ubicación
+   const handleLocationUpdate = async (newLocationName) => {
+        try {
+            // Cifrar la nueva ubicación
+            const encryptedLocation = await encryptLocation(newLocationName);
+            
+            // Actualizar el estado con la ubicación cifrada
+            setLocationName(encryptedLocation);
+
+            // Aquí podrías enviar la ubicación cifrada a un servidor si es necesario
+            console.log('Ubicación cifrada:', encryptedLocation);
+        } catch (error) {
+            console.error('Error al cifrar la ubicación:', error.message);
+        }
+    };
+
+    // Generar claves al montar el componente
+    useEffect(() => {
+        generateKeys();
+    }, []);
+
 
   return (
     <div className="dashboard-container">
